@@ -1,92 +1,55 @@
-#
-# Derived from
-# https://github.com/steveno/ctags/blob/master/.travis.yml
-#
 
-dist: xenial
+dist: trusty
 
 language: c
 
-os:
-  - linux
-  - osx
-
-compiler:
-  - gcc
-  - clang
-
-env:
-  global:
-    # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
-    #   via the "travis encrypt" command using the project repo's public key
-    - secure: "FZunj1O8PR/2DEEN1tUAFzSxeo3jf2oOLkP7SmOSdeZ8W8QPo/5Nfhlhl0uambYOXOre/p/mCNXjudtsTwKHtq4uP6fejjPJl5cmHBCm/KtIoLnUaDyaSjoq6tKi2duJJhwY9H6X5ILtDxWveRbs5NhmKo9H+c1vHsBg0Wbuslg="
-
-  addons:
-    coverity_scan:
-      project:
-        name: "fishman/ctags"
-      description: "Build submitted via Travis CI"
-    notification_email: coverityctags@gmail.com
-    build_command_prepend: "./autogen.sh ; ./configure ; make clean"
-    build_command:   "make -j 4 CFLAGS=-O0"
-    branch_pattern: master
-
 addons:
   apt:
+    sources:
+      - ubuntu-toolchain-r-test
     packages:
-      - lcov
-      - binutils-mingw-w64-i686
-      - gcc-mingw-w64-i686
-      - libjansson-dev
-      - libyaml-dev
-      - libseccomp-dev
-      - gdb
-      - valgrind
+      - g++-7
 
-env:
-  - TARGET=Unix
-  - TARGET=Mingw32
+services: docker
 
-# Only with gcc get the mingw-w64 cross compilers
-before_install:
-  - |
-    if [ $CC = 'gcc' ] && [ $TRAVIS_OS_NAME = 'linux' ]; then
-    	gem install lcoveralls
-    fi
-
-# Build and run tests. Only with gcc cross compile
-script:
-  - ./misc/travis-check.sh
-
-after_success:
-  - |
-    if [ $CC = 'gcc' ] && [ $TRAVIS_OS_NAME = 'linux' ]; then
-        (
-            for f in /home/travis/.rvm/gems/ruby-2*/gems/lcoveralls-*/lib/lcoveralls/color_formatter.rb; do
-                    sed -i -e 's/severity.capitalize!/severity = severity.capitalize/' $f
-            done
-            for f in /home/travis/.rvm/gems/ruby-2*/gems/lcoveralls-*/lib/lcoveralls/runner.rb; do
-                    sed -i -e 's/\(.*format.*f\)\(%\)\('"'"'.*$\)/\1%%\3/' $f
-            done
-        )
-
-        (cd linux-gcc-gcov; lcov -c -b .. -d . -o coverage.info)
-
-        # Upload to coveralls.
-        lcoveralls --root . --retry-count 5 linux-gcc-gcov/coverage.info
-
-        # Upload to codecov.
-        bash <(curl -s https://codecov.io/bash) -f linux-gcc-gcov/coverage.info -Z -X gcov -X coveragepy -X search -X xcode -X gcovout -n travis-$TRAVIS_OS_NAME
-    fi
-
-# Build Matrix configuration
-# By default Travis CI runs all possible environment/target combinations.
-# This setting allows the exclusion of undesired combination.
-# For more information:
-# http://docs.travis-ci.com/user/customizing-the-build/#Build-Matrix
 matrix:
-  exclude:
-    - compiler: clang
-      env: TARGET=Mingw32
-    - os: osx
-      env: TARGET=Mingw32
+  include:
+      # linux
+      - os: linux   # abi 57
+        env: CXX="g++-7"
+      # os x x86
+      - os: osx     # abi 64
+        env: CXX="clang"
+
+install:
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+      docker run -v `pwd`:/build --rm spacedragon/centos6_builder /bin/bash -c 'source scl_source enable devtoolset-3 && source ~/.bashrc && export CC=gcc && export CXX=g++ && yum install -y autoconf automake && ./autogen.sh && ./configure && make -j$(nproc) && make install';
+    fi
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+      ./autogen.sh
+      ./configure
+      make make -j$(nproc)
+      make install
+    fi
+
+git:
+  depth: 10
+
+branches:
+  only:
+    - master
+    - /^v\d+\.\d+\.\d+(?:-[a-z0-9.-]+)?$/
+
+
+deploy:
+  provider: releases
+  api_key:
+    secure: Jaf7wg4fLcn1rcysdKOH4xQG7On2o7g4xarjFszjCJFPAIZHHaIPqQHeS+jlhiG/9Wt/3XbNVQRctlnCIK5MyEz2c8AKnLnMcBpgd276NUfx87PomjhZnpqXCB4Txi9Y/UHvmIo7gVrUUWo38XDpIJ7dbe9f8cNzQsMi9RZfsg/h9MIySJPyYRq4bqrM5OxfADDrLRhBHEq+QcJpYsZJ5zKyTig2LvFFoPPVdf+y5HK6oQDMKUTu5yVVYBr8ORPvHzMr8PLVbJLvsyxzReJ47eF/B8AF+r4I+pxsu6Jhpa7KPa8cs32uaBnzAj+DL1GgomKqG8Y4fJ6YuhcDKdpIemB7Bkt6nO2JSMuOYdBpo7LvgAPKqj2RGEBOw6Os7SCSragEls3UEszRt2oIRVP8VcAq1R43T0RuFz69+2YOy99/v3aRTUC86gcU6A0CvrxqF7N4vAomKJIZJcIFEg4DwoQqWh5vscLkpdTx0wkWfNlPzOFMOk3pGZ9JIZvbR68EheP/cJVkZqIx3+OUcCDFqLKhLPxp67Qvj9Zv5B7W21P8ott6D3aEn1+LNmGmEm4yPOk2RQFDprqA/oDGAcmbUlXqa9YdALjHHaneI9A+czrK8iv6Ik730nYeDYih3MRhLkWDHTcblTdJHHZUyBZdkxBIzKCYviwaTi6CxZW0McQ=
+  skip_cleanup: true
+  file_glob: true
+  file: "ctags"
+  overwrite: true
+  on:
+    repo: elastic/ctags
+    tags: true
+
