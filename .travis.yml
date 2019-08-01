@@ -23,13 +23,24 @@ matrix:
 
 install:
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-      docker run -v `pwd`:/build --rm spacedragon/centos6_builder /bin/bash -c 'source scl_source enable devtoolset-3 && source ~/.bashrc && export CC=gcc && export CXX=g++ && yum install -y autoconf automake && ./autogen.sh && ./configure && make -j$(nproc) && make install';
+      docker run -v `pwd`:/build --rm spacedragon/centos6_builder /bin/bash -c 'source scl_source enable devtoolset-3 && source ~/.bashrc && export CC=gcc && export CXX=g++ && yum install -y autoconf automake && ./autogen.sh && ./configure && make -j4 && make install';
     fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-      ./autogen.sh
-      ./configure
-      make make -j$(nproc)
-      make install
+      ./autogen.sh;
+      ./configure;
+      make -j4;
+      make install;
+      mv ctags ctags-darwin;
+    fi
+
+script:
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+      ls -al;
+      # mv ctags ctags-linux;
+      # ./ctags-linux --version;
+    fi
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+      ./ctags-darwin --version;
     fi
 
 git:
@@ -44,12 +55,11 @@ branches:
 deploy:
   provider: releases
   api_key:
-    secure: Jaf7wg4fLcn1rcysdKOH4xQG7On2o7g4xarjFszjCJFPAIZHHaIPqQHeS+jlhiG/9Wt/3XbNVQRctlnCIK5MyEz2c8AKnLnMcBpgd276NUfx87PomjhZnpqXCB4Txi9Y/UHvmIo7gVrUUWo38XDpIJ7dbe9f8cNzQsMi9RZfsg/h9MIySJPyYRq4bqrM5OxfADDrLRhBHEq+QcJpYsZJ5zKyTig2LvFFoPPVdf+y5HK6oQDMKUTu5yVVYBr8ORPvHzMr8PLVbJLvsyxzReJ47eF/B8AF+r4I+pxsu6Jhpa7KPa8cs32uaBnzAj+DL1GgomKqG8Y4fJ6YuhcDKdpIemB7Bkt6nO2JSMuOYdBpo7LvgAPKqj2RGEBOw6Os7SCSragEls3UEszRt2oIRVP8VcAq1R43T0RuFz69+2YOy99/v3aRTUC86gcU6A0CvrxqF7N4vAomKJIZJcIFEg4DwoQqWh5vscLkpdTx0wkWfNlPzOFMOk3pGZ9JIZvbR68EheP/cJVkZqIx3+OUcCDFqLKhLPxp67Qvj9Zv5B7W21P8ott6D3aEn1+LNmGmEm4yPOk2RQFDprqA/oDGAcmbUlXqa9YdALjHHaneI9A+czrK8iv6Ik730nYeDYih3MRhLkWDHTcblTdJHHZUyBZdkxBIzKCYviwaTi6CxZW0McQ=
+    secure: V/dUyqOPRTPknYxAqB/87NtFRSUCKdoMoMwspxK3hwHEPMKvO0DzXtobMBAl7RJQS7vwnbOktbLQ7hKovKdkFG97wDuwuG/cJTDr241ULWGM3uyfTs8T+2LZYVrIhVAHrQZQCIgXWc6bgqyVRtwVnvr80W9VzKu0E/05fa14LlY+bAe2Dy5uk8d3UcFtRCRZTUFMY8WUQFPStS0aWyywl77wXEavSlFY602mMRIbbFNTwFpSzLumYoxxzeogb2Iy1frENo3113kQARGeRnhljqh8+Jl8en2cFvWAAVWFlouBhfHhyYLFp78a+3pMAJtKbAOeMAVn/ixtLyUHsDhIGcZOzWWUn8EJ2AmUM22U/8qGlYaxW9DH2+ydg5fu/Hf2zPoN9ophp7J+WNU1i9vqdR3KK2Ds2lKuGGXEkg0o21+tDk989nht7r/pdhU4j4mHC/5/goi0Orc50IO2v/xMBx0va0HW+uewPNiDPvkCffMT2nUwIFisXZQCcjEPExhRjdygCKliUl0jAhY2prJpsNGjsUIMchAd8V8iXjfd5E8U8ppTMjiTBzMH0jaewkJIjK/DcFKcVBUvoW0UhzPJtq42hGYRIiuJwvoPF5aatcJRCcSPtlyJhGavc759SnYyJFsax+fz2d0BeLDD2fDMShDqyek72knbYHP2oVUFNk0=
   skip_cleanup: true
   file_glob: true
-  file: "ctags"
+  file: "ctags-*"
   overwrite: true
   on:
     repo: elastic/ctags
     tags: true
-
