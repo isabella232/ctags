@@ -17,11 +17,12 @@ build_script:
 # after_build:
 #   - '%APPVEYOR_BUILD_FOLDER%\win32\appveyor.bat package'
 
-# test_script:
-#   - '%APPVEYOR_BUILD_FOLDER%\win32\appveyor.bat test'
+test_script:
+  - '%APPVEYOR_BUILD_FOLDER%\win32\appveyor.bat test'
+  - mv ctags.exe ctags-win32.exe
 
 artifacts:
-  - path: ctags.exe
+  - path: ctags-win32.exe
 
 deploy:
   - provider: GitHub
@@ -29,7 +30,7 @@ deploy:
       Universal Ctags pre builds used by ([@elastic/ctags-langserver](https://github.com/elastic/ctags-langserver)).
     auth_token:
       secure: AfJEZz4Zv9OTyO2KxHZ3nF6JSFu0gjfKJKxS/WIyb3wInsmCAeBKlzunN5F1q7DU
-    artifact: ctags.exe
+    artifact: ctags-win32.exe
     prerelease: true
     on:
       appveyor_repo_tag: true
