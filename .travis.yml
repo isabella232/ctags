@@ -23,13 +23,12 @@ matrix:
 
 install:
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-      docker run -v `pwd`:/build --rm spacedragon/centos6_builder:v2 /bin/bash -c 'source scl_source enable devtoolset-3 && cd /build && source ~/.bashrc && export CC=gcc && export CXX=g++ && yum install -y autoconf automake && ./autogen.sh && ./configure && make -j4 && make install';
+      docker run -v `pwd`:/build --rm spacedragon/centos6_builder:v2 /bin/bash -c 'source scl_source enable devtoolset-3 && cd /build && source ~/.bashrc && export CC=gcc && export CXX=g++ && yum install -y autoconf automake && ./autogen.sh && ./configure --disable-yaml --disable-xml && make -j4';
     fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
       ./autogen.sh;
-      ./configure;
+      ./configure --disable-yaml --disable-xml;
       make -j4;
-      make install;
     fi
 
 script:
