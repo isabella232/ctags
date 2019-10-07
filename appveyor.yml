@@ -18,7 +18,6 @@ build_script:
 #   - '%APPVEYOR_BUILD_FOLDER%\win32\appveyor.bat package'
 
 test_script:
-  - '%APPVEYOR_BUILD_FOLDER%\win32\appveyor.bat test'
   - mv ctags.exe ctags-win32.exe
 
 artifacts:
